@@ -1,0 +1,1 @@
+Install necesssary requirements using `pip install`, run backtesting simulation from `main.py`
