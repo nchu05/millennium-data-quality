@@ -12,16 +12,19 @@ class OrderGenerator(ABC):
 
 class MeanReversionOrderGenerator(OrderGenerator):
     """Mean reversion strategy implementation of OrderGenerator."""
-    # TODO: Add support for multi-ticker portfolio
-    
+        
     def generate_orders(self, data: pd.DataFrame) -> List[Dict[str, Any]]:
         orders = []
-        data['100_day_avg'] = data['Close'].rolling(window=100).mean()
+        tickers = data.columns
         
-        for date, row in data.iterrows():
-            if row['Close'] < row['100_day_avg']:
-                orders.append({"date": date, "type": "BUY", "ticker": "AAPL", "quantity": 100})
-            else:
-                orders.append({"date": date, "type": "SELL", "ticker": "AAPL", "quantity": 100})
-        
+        for ticker in tickers:
+            ticker_data = data[ticker].to_frame(name='Close')
+            ticker_data['100_day_avg'] = ticker_data['Close'].rolling(window=100).mean()
+            
+            for date, row in ticker_data.iterrows():
+                if row['Close'] < row['100_day_avg']:
+                    orders.append({"date": date, "type": "BUY", "ticker": ticker, "quantity": 100})
+                else:
+                    orders.append({"date": date, "type": "SELL", "ticker": ticker, "quantity": 100})
+            
         return orders
