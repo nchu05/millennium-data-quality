@@ -4,6 +4,7 @@ from order_generator import MeanReversionOrderGenerator
 from backtest_engine import SimpleBacktestEngine
 from metrics import ExtendedMetrics
 
+
 def main():
     data_source = YahooFinanceDataSource()
     order_generator = MeanReversionOrderGenerator()
@@ -12,17 +13,30 @@ def main():
 
     # run sim on 13 year history of just AAPL, 100 day mean reversion strategy
     data = data_source.get_historical_data("AAPL", "2011-01-01", "2024-01-01")
+
+    data_dict = dict()
+    start_date = "2011-01-01"
+    end_date = "2024-01-01"
+    tickers = ["AAPL", "GOOGL", "AMZN", "MSFT",
+               "FB", "TSLA", "NVDA", "INTC", "AMD", "NFLX"]
+    for ticker in tickers:
+        data_dict[ticker] = data_source.get_historical_data(
+            ticker, start_date, end_date)
+
     orders = order_generator.generate_orders(data)
 
     backtest_results = backtest_engine.run_backtest(orders, data)
     portfolio_values = backtest_results["portfolio_values"]["Portfolio Value"]
     returns = portfolio_values.pct_change().dropna()
 
-    benchmark_data = data_source.get_historical_data("SPY", "2011-01-01", "2024-01-01")
+    benchmark_data = data_source.get_historical_data(
+        "SPY", "2011-01-01", "2024-01-01")
     benchmark_returns = benchmark_data['Close'].pct_change().dropna()
-    
-    metrics = metrics_calculator.calculate(portfolio_values, returns, benchmark_returns)
+
+    metrics = metrics_calculator.calculate(
+        portfolio_values, returns, benchmark_returns)
     print("Backtest Metrics:", metrics)
+
 
 if __name__ == "__main__":
     main()
