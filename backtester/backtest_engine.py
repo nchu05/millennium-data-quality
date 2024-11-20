@@ -16,7 +16,7 @@ class BacktestEngine(ABC):
 
 class SimpleBacktestEngine(BacktestEngine):
     """Simple backtest engine implementation."""
-    
+
     def run_backtest(self, orders: List[Dict[str, Any]], data: pd.DataFrame) -> Dict[str, Any]:
         portfolio_values = []
         cash = self.initial_cash
@@ -27,17 +27,20 @@ class SimpleBacktestEngine(BacktestEngine):
             ticker = order["ticker"]
             close_price = data.at[date, ticker]
             quantity = order["quantity"]
-            
+
             if order["type"] == "BUY":
-                cash -= close_price * quantity
-                holdings[ticker] = holdings.get(ticker, 0) + quantity
+                cash_needed = close_price * quantity
+                if cash >= cash_needed:
+                    cash -= cash_needed
+                    holdings[ticker] = holdings.get(ticker, 0) + quantity
+                else:
+                    print(f"{date}: Insufficient cash to buy {quantity} shares of {ticker}. Skipping order.")
             elif order["type"] == "SELL":
                 if holdings.get(ticker, 0) >= quantity:
                     cash += close_price * quantity
                     holdings[ticker] -= quantity
                 else:
                     print(f"{date}: Cannot sell more than holdings for {ticker}. Skipping order.")
-                    continue
 
             total_value = cash
             for h_ticker, h_quantity in holdings.items():

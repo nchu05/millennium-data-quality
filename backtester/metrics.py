@@ -22,7 +22,8 @@ class ExtendedMetrics(Metrics):
         metrics['Cumulative Return'] = (1 + returns).prod() - 1
         metrics['Log Return'] = np.log(1 + returns).mean()
 
-        metrics['Volatility'] = returns.std() * np.sqrt(252)  # annualize volatility
+        # volatility is the standard deviation of returns
+        metrics['Volatility'] = returns.std() * np.sqrt(252)  # annualize volatility, 252 trading days in a yr
 
         if benchmark_returns is not None:
             metrics['Information Coefficient'] = returns.corr(benchmark_returns)
@@ -31,13 +32,15 @@ class ExtendedMetrics(Metrics):
 
         risk_free_rate = 0.0045  
         excess_returns = returns - (risk_free_rate / 252)
+        # sharpe ratio is the excess return over the risk free rate divided by the volatility
         metrics['Sharpe Ratio'] = excess_returns.mean() / excess_returns.std() * np.sqrt(252)
 
         running_max = portfolio_values.cummax()
         drawdown = (portfolio_values / running_max) - 1
+        # max drawdown is the max loss from a peak to a trough in the portfolio value
         metrics['Max Drawdown'] = drawdown.min()
 
-        # val at risk (VaR) 1 day horizon
+        # val at risk (VaR) 1 day horizon. 5% quantile. this is the max loss we can expect with 95% confidence
         metrics['VaR 5%'] = returns.quantile(0.05)
 
         # TODO: Implement beta and alpha calculation

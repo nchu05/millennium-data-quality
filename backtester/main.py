@@ -10,7 +10,7 @@ def main():
     backtest_engine = SimpleBacktestEngine(initial_cash=100000)
     metrics_calculator = ExtendedMetrics()
 
-    tickers = ["AAPL", "MSFT", "GOOGL"]  # Example tickers
+    tickers = ["AAPL", "MSFT", "GOOGL"]  
     data = data_source.get_historical_data(tickers, "2011-01-01", "2024-01-01")
     orders = order_generator.generate_orders(data)
 
@@ -22,6 +22,8 @@ def main():
     benchmark_returns = benchmark_data.pct_change().dropna()
 
     metrics = metrics_calculator.calculate(portfolio_values, returns, benchmark_returns)
+    # Note: all values are annualized and assume 252 trading days in a year
+    # Note: all returns are in fractional format. For example, 0.01 is 1% return
     print("Backtest Metrics:", metrics)
 
 if __name__ == "__main__":
