@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 import numpy as np
 from typing import Dict
+import matplotlib.pyplot as plt
 
 class Metrics(ABC):
     """Interface for calculating portfolio metrics."""
@@ -42,17 +43,13 @@ class ExtendedMetrics(Metrics):
 
         # val at risk (VaR) 1 day horizon. 5% quantile. this is the max loss we can expect with 95% confidence
         metrics['VaR 5%'] = returns.quantile(0.05)
-
-        # TODO: Implement beta and alpha calculation
-        
-        # if benchmark_returns is not None:
-        #     cov_matrix = np.cov(returns, benchmark_returns)
-        #     # beta in simple terms is the sensitivity of the stock to the benchmark
-        #     # alpha is the excess return of the stock over the benchmark, so this is our "edge"
-        #     metrics['Beta'] = cov_matrix[0, 1] / cov_matrix[1, 1] 
-        #     metrics['Alpha'] = (returns.mean() * 252) - (metrics['Beta'] * benchmark_returns.mean() * 252)
-        # else:
-        #     metrics['Beta'] = None
-        #     metrics['Alpha'] = None
-
         return metrics
+
+    def plot_returns(self, returns: pd.Series, title: str = "Portfolio Returns"):
+        plt.figure(figsize=(10, 6))
+        returns.cumsum().plot()
+        plt.title(title)
+        plt.xlabel("Date")
+        plt.ylabel("Cumulative Returns")
+        plt.grid(True)
+        plt.show()

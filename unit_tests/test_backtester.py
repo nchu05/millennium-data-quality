@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from backtester.data_source import YahooFinanceDataSource
 from backtester.order_generator import MeanReversionOrderGenerator
-from backtester.backtest_engine import SimpleBacktestEngine
+from backtester.backtest_engine import EquityBacktestEngine
 
 class TestMarketWeightedPortfolio(unittest.TestCase):
     @patch('backtester.data_source.YahooFinanceDataSource.get_market_cap_on_date')
@@ -91,7 +91,7 @@ class TestBacktesterAndOrderGenerator(unittest.TestCase):
         self.assertTrue(all(required_keys.issubset(order.keys()) for order in orders))
 
     def test_backtest_engine_insufficient_cash(self):
-        backtest_engine = SimpleBacktestEngine(initial_cash=5000)
+        backtest_engine = EquityBacktestEngine(initial_cash=5000)
         orders = [{"date": '2023-01-01', "type": "BUY", "ticker": "AAPL", "quantity": 100}]
         data = pd.DataFrame({
             'AAPL': [150]
@@ -102,7 +102,7 @@ class TestBacktesterAndOrderGenerator(unittest.TestCase):
         self.assertEqual(portfolio_values.iloc[0]['Portfolio Value'], 5000)
 
     def test_backtest_engine_sell_without_holdings(self):
-        backtest_engine = SimpleBacktestEngine(initial_cash=10000)
+        backtest_engine = EquityBacktestEngine(initial_cash=10000)
         orders = [{"date": '2023-01-01', "type": "SELL", "ticker": "AAPL", "quantity": 50}]
         data = pd.DataFrame({
             'AAPL': [150]

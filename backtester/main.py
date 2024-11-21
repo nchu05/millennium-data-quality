@@ -1,13 +1,13 @@
 import pandas as pd
 from data_source import YahooFinanceDataSource
 from order_generator import MeanReversionOrderGenerator
-from backtest_engine import SimpleBacktestEngine
+from backtest_engine import EquityBacktestEngine
 from metrics import ExtendedMetrics
 
 def main():
     data_source = YahooFinanceDataSource()
     order_generator = MeanReversionOrderGenerator()
-    backtest_engine = SimpleBacktestEngine(initial_cash=100000)
+    backtest_engine = EquityBacktestEngine(initial_cash=100000)
     metrics_calculator = ExtendedMetrics()
 
     tickers = ["AAPL", "MSFT", "GOOGL"]  

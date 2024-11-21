@@ -14,39 +14,43 @@ class BacktestEngine(ABC):
         """Run backtest simulation given orders and historical data."""
         pass
 
-class SimpleBacktestEngine(BacktestEngine):
-    """Simple backtest engine implementation."""
+class EquityBacktestEngine(BacktestEngine):
+    """Equities (long/short) backtest engine implementation without slippage or transaction costs."""
 
     def run_backtest(self, orders: List[Dict[str, Any]], data: pd.DataFrame) -> Dict[str, Any]:
-        portfolio_values = []
         cash = self.initial_cash
         holdings = {}
+        portfolio_values = []
+        all_dates = data.index.sort_values()
+        order_index = 0
+        num_orders = len(orders)
 
-        for order in orders:
-            date = order["date"]
-            ticker = order["ticker"]
-            close_price = data.at[date, ticker]
-            quantity = order["quantity"]
+        for current_date in all_dates:
+            while order_index < num_orders and orders[order_index]['date'] == current_date:
+                order = orders[order_index]
+                ticker = order["ticker"]
+                quantity = order["quantity"]
+                price = data.at[current_date, ticker]
 
-            if order["type"] == "BUY":
-                cash_needed = close_price * quantity
-                if cash >= cash_needed:
-                    cash -= cash_needed
+                if order["type"] == "BUY":
+                    cost = price * quantity
+                    cash -= cost
                     holdings[ticker] = holdings.get(ticker, 0) + quantity
-                else:
-                    print(f"{date}: Insufficient cash to buy {quantity} shares of {ticker}. Skipping order.")
-            elif order["type"] == "SELL":
-                if holdings.get(ticker, 0) >= quantity:
-                    cash += close_price * quantity
-                    holdings[ticker] -= quantity
-                else:
-                    print(f"{date}: Cannot sell more than holdings for {ticker}. Skipping order.")
+                elif order["type"] == "SELL":
+                    proceeds = price * quantity
+                    cash += proceeds
+                    holdings[ticker] = holdings.get(ticker, 0) - quantity
+
+                order_index += 1
 
             total_value = cash
             for h_ticker, h_quantity in holdings.items():
-                total_value += data.at[date, h_ticker] * h_quantity
+                price = data.at[current_date, h_ticker]
+                position_value = price * h_quantity
+                total_value += position_value
 
-            print(f"{date}: Portfolio Value - {total_value:.2f}")
-            portfolio_values.append((date, total_value))
+            portfolio_values.append((current_date, total_value))
+            print(f"{current_date}: Portfolio Value - {total_value:.2f}")
 
-        return {"portfolio_values": pd.DataFrame(portfolio_values, columns=["Date", "Portfolio Value"]).set_index("Date")}
+        portfolio_values_df = pd.DataFrame(portfolio_values, columns=["Date", "Portfolio Value"]).set_index("Date")
+        return {"portfolio_values": portfolio_values_df}
