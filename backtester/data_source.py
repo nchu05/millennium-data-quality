@@ -17,7 +17,7 @@ class YahooFinanceDataSource(DataSource):
     """Implementation of DataSource using Yahoo Finance. Queries historical price data, as well as compares weighted portfolios to SPY ETF."""
     
     def get_historical_data(self, tickers: List[str], start_date: str, end_date: str) -> pd.DataFrame:
-        data = yf.download(tickers, start=start_date, end=end_date, auto_adjust=False, parallel=True) # newest update replaces "Close" with "Adj Close" if set auto_adjust = True
+        data = yf.download(tickers, start=start_date, end=end_date, auto_adjust=False) # newest update replaces "Close" with "Adj Close" if set auto_adjust = True
         return data['Adj Close']
     
     def get_historical_data_with_volume(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
