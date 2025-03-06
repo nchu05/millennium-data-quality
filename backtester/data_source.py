@@ -22,7 +22,7 @@ class YahooFinanceDataSource(DataSource):
     
     def get_historical_data_with_volume(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, pd.DataFrame]:
         """Fetch historical price and volume data for given tickers and date range, organized by ticker."""
-        data = yf.download(tickers, start=start_date, end=end_date, parallel=True)
+        data = yf.download(tickers, start=start_date, end=end_date)
         result = {}
         for ticker in tickers:
             ticker_data = pd.DataFrame()
