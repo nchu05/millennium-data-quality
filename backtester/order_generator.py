@@ -133,3 +133,79 @@ class BettingAgainstBetaOrderGenerator(OrderGenerator):
             all_orders.extend(orders)
 
         return all_orders
+    
+class StableMinusRiskyOrderGenerator:
+    def __init__(self, lookback_period = 60, rebalance_frequency = 'ME', starting_portfolio_value = 100000):
+        self.lookback_period = lookback_period
+        self.rebalance_frequency = rebalance_frequency
+        self.starting_portfolio_value = starting_portfolio_value
+
+    def calculate_predicted_returns(self, data, date):
+        predicted_returns = {}
+        for ticker, df in data.items():
+            if len(df) < self.lookback_period:
+                continue
+            if df.index[-1] < date:
+                continue
+            df_up_to_date = df.loc[:date]
+            if len(df_up_to_date) < self.lookback_period:
+                continue
+            recent = df_up_to_date.iloc[-self.lookback_period:]
+            daily_returns = recent['Adj Close'].pct_change().dropna()
+            if len(daily_returns) > 0:
+                avg_daily_return = daily_returns.mean()
+                ann_return = avg_daily_return * 252
+                predicted_returns[ticker] = ann_return
+        return predicted_returns
+
+    def generate_orders_for_date(self, predicted_returns, date):
+        pr_series = pd.Series(predicted_returns).dropna()
+        if pr_series.empty:
+            return []
+        sorted_by_pr = pr_series.sort_values()
+        num_stocks = len(sorted_by_pr)
+        decile_size = max(int(num_stocks * 0.1), 1)
+        risky_tickers = sorted_by_pr.head(decile_size).index.tolist()
+        stable_tickers = sorted_by_pr.tail(decile_size).index.tolist()
+        half_capital = self.starting_portfolio_value / 2.0
+        stable_allocation_per_ticker = half_capital / decile_size
+        risky_allocation_per_ticker = half_capital / decile_size
+        orders = []
+        for ticker in stable_tickers:
+            quantity = int(stable_allocation_per_ticker)
+            if quantity > 0:
+                orders.append({
+                    "date": date,
+                    "type": "BUY",
+                    "ticker": ticker,
+                    "quantity": quantity
+                })
+        for ticker in risky_tickers:
+            quantity = int(risky_allocation_per_ticker)
+            if quantity > 0:
+                orders.append({
+                    "date": date,
+                    "type": "SELL",
+                    "ticker": ticker,
+                    "quantity": quantity
+                })
+        return orders
+
+    def generate_orders(self, data: Dict[str, pd.DataFrame]) -> List[Dict[str, Any]]:
+        if 'SPY' not in data:
+            raise ValueError("SPY data is required.")
+        spy_data = data['SPY']
+        spy_dates = spy_data.index
+        if len(spy_dates) <= self.lookback_period:
+            raise ValueError("Not enough SPY data.")
+        start_date = spy_dates[self.lookback_period]
+        end_date = spy_dates[-1]
+        rebalance_dates = pd.date_range(start=start_date, end=end_date, freq=self.rebalance_frequency)
+        all_orders = []
+        for date in rebalance_dates:
+            pr_values = self.calculate_predicted_returns(data, date)
+            if len(pr_values) < 20:
+                continue
+            orders = self.generate_orders_for_date(pr_values, date)
+            all_orders.extend(orders)
+        return all_orders
